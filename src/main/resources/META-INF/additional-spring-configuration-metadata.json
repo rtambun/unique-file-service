@@ -1,0 +1,38 @@
+{
+  "properties": [
+    {
+      "name": "minio.response.url",
+      "type": "java.lang.String",
+      "description": "Base url added to file name as response to query."
+    },
+    {
+      "name": "thumbnail.default.width",
+      "type": "java.lang.String",
+      "description": "Thumbnail width."
+    },
+    {
+      "name": "thumbnail.default.height",
+      "type": "java.lang.String",
+      "description": "Thumbnail height."
+    },
+    {
+      "name": "elasticsearch.host",
+      "type": "java.lang.String",
+      "description": "Elasticsearch host."
+    },
+    {
+      "name": "elasticsearch.port",
+      "type": "java.lang.String",
+      "description": "Elasticsearch port."
+    },
+    {
+      "name": "elasticsearch.username",
+      "type": "java.lang.String",
+      "description": "Elasticsearch user name."
+    },
+    {
+      "name": "elasticsearch.password",
+      "type": "java.lang.String",
+      "description": "Elasticsearch password."
+    }
+  ] }
