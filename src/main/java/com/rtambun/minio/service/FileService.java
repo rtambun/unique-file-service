@@ -23,9 +23,9 @@ import static java.nio.file.Path.of;
 @Log4j2
 public class FileService {
 
-    private FileMapRepository fileMapRepository;
-    private MinioService minioService;
-    private UUIDProvider uuidProvider;
+    private final FileMapRepository fileMapRepository;
+    private final MinioService minioService;
+    private final UUIDProvider uuidProvider;
 
     public FileService(FileMapRepository fileMapRepository,
                        MinioService minioService,
@@ -99,7 +99,7 @@ public class FileService {
             throw new FileServiceException(FileServiceException.FILE_CANT_BE_READ);
         } catch (IOException ioException) {
             log.error("Failed while connecting to minio: {}. Exception : {}", fileName, ioException);
-            throw new FileServiceException(FileServiceException.FILE_CANT_BE_READ);
+            throw new FileServiceException(FileServiceException.CONNECTION_ISSUE);
         }
     }
 }
