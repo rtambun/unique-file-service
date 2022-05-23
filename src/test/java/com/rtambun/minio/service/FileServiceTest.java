@@ -14,6 +14,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.ByteArrayInputStream;
@@ -288,15 +289,16 @@ class FileServiceTest {
 
         FileMap fileMap = new FileMap("id", "incidentId", "fileName.jpg", "mappedFileName.jpg");
         when(mockFileMapRepository.findFileMapByIncidentIdAndFileName(any(), any())).thenReturn(fileMap);
-        InputStream inputStream = new FileInputStream("Alert-IVH.png");
+        InputStream inputStream = new FileInputStream(new ClassPathResource("circle-black-simple.png").getFile());
+        inputStream.close();
         when(mockMinioService.get(any())).thenReturn(inputStream);
 
         FileServiceException fex = assertThrows(FileServiceException.class,
                 () -> fileService.getFile("mappedFileName.jpg"));
         assertThat(fex.getStatus()).isEqualTo(FileServiceException.CONNECTION_ISSUE);
 
-        verify(mockFileMapRepository, times(1))
-                .findFileMapByIncidentIdAndFileName("incidentId", "mappedFileName.jpg");
+        verify(mockFileMapRepository, times(0))
+                .findFileMapByIncidentIdAndFileName(any(), any());
         ArgumentCaptor<Path> pathArgumentCaptor = ArgumentCaptor.forClass(Path.class);
         verify(mockMinioService, times(1)).get(pathArgumentCaptor.capture());
         assertThat(pathArgumentCaptor.getValue().toString()).isEqualTo("mappedFileName.jpg");
