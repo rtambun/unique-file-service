@@ -97,15 +97,29 @@ public class FileUploadController {
     }
 
     @DeleteMapping("/{object}")
-    public void deleteObj(@PathVariable("object") String object, HttpServletResponse response) throws MinioException, IOException {
-        minioService.remove(of(object));
+    public ResponseEntity<Object> deleteObj(@PathVariable("object") String object) {
+        return removeObj(null, object);
+    }
 
-        // Set the content type and attachment header.
-        response.addHeader(CONTENT_DISPOSITION, ATTACHMENT_FILENAME + object);
-        response.setContentType(URLConnection.guessContentTypeFromName(object));
+    @DeleteMapping("/v2/{incidentId}/{object}")
+    public ResponseEntity<Object> deleteObj(@PathVariable("incidentId") String incidentId,
+                                            @PathVariable("object") String object) {
+        return removeObj(incidentId, object);
+    }
 
-        // Copy the stream to the response's output stream.
-        response.flushBuffer();
+    private ResponseEntity<Object> removeObj(String incidentId, String object) {
+        try {
+            FileResponse fileResponse = fileService.deleteFile(incidentId, object);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentDisposition(ContentDisposition.builder("inline")
+                    .filename(fileResponse.getFileName())
+                    .build());
+            String contentType = URLConnection.guessContentTypeFromName(fileResponse.getFileName());
+            headers.setContentType(MediaType.valueOf(contentType));
+            return new ResponseEntity<>(headers, HttpStatus.OK);
+        } catch (FileServiceException e) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
     }
 
     @GetMapping("/{object}")

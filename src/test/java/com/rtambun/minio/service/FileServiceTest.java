@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static java.nio.file.Path.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -304,6 +305,108 @@ class FileServiceTest {
         ArgumentCaptor<Path> pathArgumentCaptor = ArgumentCaptor.forClass(Path.class);
         verify(mockMinioService, times(1)).get(pathArgumentCaptor.capture());
         assertThat(pathArgumentCaptor.getValue().toString()).isEqualTo("mappedFileName.jpg");
+    }
+
+    @Test
+    void deleteFile_IncidentIdIsNull_DeleteUsingFileName()
+            throws FileServiceException, MinioException {
+
+        FileMap fileMap = new FileMap("id",
+                "incidentId",
+                "fileName",
+                "mappedFileName");
+        when(mockFileMapRepository.findFileMapByIncidentIdAndFileName(any(), any())).thenReturn(fileMap);
+
+        FileResponse actual = fileService.deleteFile(null, "test.jpg");
+
+        FileResponse expected = new FileResponse("test.jpg", null);
+        assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+
+        verify(mockFileMapRepository, times(0))
+                .findFileMapByIncidentIdAndFileName(any(), anyString());
+        verify(mockMinioService, times(1)).remove(of("test.jpg"));
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @MethodSource(value = "getData_deleteFile_FileIsNotInTheFileMapRepository_DeleteUsingFileName")
+    void deleteFile_FileIsNotInTheFileMapRepository_DeleteUsingFileName(FileMap fileMap)
+            throws FileServiceException, MinioException {
+
+        when(mockFileMapRepository.findFileMapByIncidentIdAndFileName(any(), any())).thenReturn(fileMap);
+
+        FileResponse actual = fileService.deleteFile("incidentId", "test.jpg");
+
+        FileResponse expected = new FileResponse("test.jpg", null);
+        assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+
+        verify(mockFileMapRepository, times(1))
+                .findFileMapByIncidentIdAndFileName("incidentId", "test.jpg");
+        verify(mockMinioService, times(1)).remove(of("test.jpg"));
+    }
+
+    static Stream<Arguments> getData_deleteFile_FileIsNotInTheFileMapRepository_DeleteUsingFileName() {
+        return Stream.of(
+                Arguments.of(new FileMap(null, "", "", "")),
+                Arguments.of(new FileMap("", "", "", "")));
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @MethodSource(value = "getData_deleteFile_FileIsNotInTheFileMapRepository_DeleteUsingFileName")
+    void deleteFile_FileIsNotInTheFileMapRepository_DeleteUsingFileName_ThrowException(FileMap fileMap)
+            throws MinioException {
+
+        when(mockFileMapRepository.findFileMapByIncidentIdAndFileName(any(), any())).thenReturn(fileMap);
+        doThrow(new MinioException("any", null)).when(mockMinioService).remove(any());
+
+        FileServiceException ex = assertThrows(FileServiceException.class,
+                () -> fileService.deleteFile("incidentId", "test.jpg"));
+
+        assertThat(ex.getStatus()).isEqualTo(FileServiceException.FILE_CANT_BE_FOUND);
+
+        verify(mockFileMapRepository, times(1))
+                .findFileMapByIncidentIdAndFileName("incidentId","test.jpg");
+        verify(mockMinioService, times(1)).remove(of("test.jpg"));
+    }
+
+    @Test
+    void deleteFile_FileIsInFileMapRepository_DeleteUsingMappedFileName()
+            throws FileServiceException, MinioException {
+
+        when(mockFileMapRepository.findFileMapByIncidentIdAndFileName(any(), any()))
+                .thenReturn(new FileMap("id",
+                        "incidentId",
+                        "test.jpg",
+                        "mappedFileName.jpg"));
+
+        FileResponse actual = fileService.deleteFile("incidentId", "test.jpg");
+
+        FileResponse expected = new FileResponse("test.jpg", null);
+        assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+
+        verify(mockFileMapRepository, times(1))
+                .findFileMapByIncidentIdAndFileName("incidentId", "test.jpg");
+        verify(mockMinioService, times(1)).remove(of("mappedFileName.jpg"));
+    }
+
+    @Test
+    void deleteFile_FileIsInFileMapRepository_DeleteUsingMappedFileNameThrowException()
+            throws MinioException {
+
+        when(mockFileMapRepository.findFileMapByIncidentIdAndFileName(any(), any()))
+                .thenReturn(new FileMap("id",
+                        "incidentId",
+                        "test.jpg",
+                        "mappedFileName.jpg"));
+        doThrow(new MinioException("any", null)).when(mockMinioService).remove(any());
+
+        FileServiceException ex = assertThrows(FileServiceException.class,
+                () -> fileService.deleteFile("incidentId", "test.jpg"));
+
+        verify(mockFileMapRepository, times(1))
+                .findFileMapByIncidentIdAndFileName("incidentId", "test.jpg");
+        verify(mockMinioService, times(1)).remove(of("mappedFileName.jpg"));
     }
 
 }

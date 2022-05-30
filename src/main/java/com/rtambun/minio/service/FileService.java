@@ -105,4 +105,20 @@ public class FileService {
         }
         return inputStream;
     }
+
+    public FileResponse deleteFile(String incidentId, String fileName) throws FileServiceException {
+        String fileNameToBeDeleted = fileName;
+        if (incidentId != null) {
+            FileMap fileMap = fileMapRepository.findFileMapByIncidentIdAndFileName(incidentId, fileName);
+            if (fileMap != null && fileMap.getId() != null && !fileMap.getId().isEmpty()) {
+                fileNameToBeDeleted = fileMap.getMappedFileName();
+            }
+        }
+        try {
+            minioService.remove(of(fileNameToBeDeleted));
+        } catch (MinioException minioException) {
+            throw new FileServiceException(FileServiceException.FILE_CANT_BE_FOUND);
+        }
+        return new FileResponse(fileName, null);
+    }
 }

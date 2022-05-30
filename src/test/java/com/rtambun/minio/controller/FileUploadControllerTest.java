@@ -213,6 +213,74 @@ class FileUploadControllerTest {
         verify(mockImageService, times(1)).buildHttpHeader(fileName);
     }
 
+    @Test
+    public void deleteObj_v1() throws FileServiceException {
+
+        FileResponse fileResponse = new FileResponse("fileName.jpg", null);
+        when(mockFileService.deleteFile(any(), any())).thenReturn(fileResponse);
+
+        ResponseEntity<Object> actual = fileUploadController.deleteObj("fileName.jpg");
+
+        HttpHeaders expectedHeaders = new HttpHeaders();
+        expectedHeaders.setContentDisposition(ContentDisposition
+                .builder("inline")
+                .filename("fileName.jpg")
+                .build());
+        expectedHeaders.setContentType(MediaType.valueOf(MediaType.IMAGE_JPEG_VALUE));
+        ResponseEntity<Object> expected = new ResponseEntity<>(expectedHeaders, HttpStatus.OK);
+        assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+
+        verify(mockFileService, times(1)).deleteFile(null, "fileName.jpg");
+    }
+
+    @Test
+    public void deleteObj_v1_ThrowException() throws FileServiceException {
+
+        when(mockFileService.deleteFile(any(), any()))
+                .thenThrow(new FileServiceException(FileServiceException.FILE_CANT_BE_FOUND));
+
+        ResponseEntity<Object> actual = fileUploadController.deleteObj("fileName.jpg");
+
+        ResponseEntity<Object> expected = new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+
+        verify(mockFileService, times(1)).deleteFile(null, "fileName.jpg");
+    }
+
+    @Test
+    public void deleteObj_v2() throws FileServiceException {
+
+        FileResponse fileResponse = new FileResponse("fileName.jpg", null);
+        when(mockFileService.deleteFile(any(), any())).thenReturn(fileResponse);
+
+        ResponseEntity<Object> actual = fileUploadController.deleteObj("incidentId", "fileName.jpg");
+
+        HttpHeaders expectedHeaders = new HttpHeaders();
+        expectedHeaders.setContentDisposition(ContentDisposition
+                .builder("inline")
+                .filename("fileName.jpg")
+                .build());
+        expectedHeaders.setContentType(MediaType.valueOf(MediaType.IMAGE_JPEG_VALUE));
+        ResponseEntity<Object> expected = new ResponseEntity<>(expectedHeaders, HttpStatus.OK);
+        assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+
+        verify(mockFileService, times(1)).deleteFile("incidentId", "fileName.jpg");
+    }
+
+    @Test
+    public void deleteObj_v2_ThrowException() throws FileServiceException {
+
+        when(mockFileService.deleteFile(any(), any()))
+                .thenThrow(new FileServiceException(FileServiceException.FILE_CANT_BE_FOUND));
+
+        ResponseEntity<Object> actual = fileUploadController.deleteObj("incidentId", "fileName.jpg");
+
+        ResponseEntity<Object> expected = new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+
+        verify(mockFileService, times(1)).deleteFile("incidentId", "fileName.jpg");
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"sample.mp4", "sample.avi"})
     public void getThumbNail_v1_getThumbNailVideo(String objectName) throws IOException, FileServiceException {
