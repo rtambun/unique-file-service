@@ -206,7 +206,7 @@ class FileServiceTest {
         InputStream inputStream = new ByteArrayInputStream(new byte[0]);
         when(mockMinioService.get(any())).thenReturn(inputStream);
 
-        FileResponse actual = fileService.getFile("fileName.jpg");
+        FileResponse actual = fileService.getFile(null, "fileName.jpg");
 
         FileResponse expected = new FileResponse("fileName.jpg", new byte[0]);
         assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
@@ -224,13 +224,13 @@ class FileServiceTest {
         InputStream inputStream = new ByteArrayInputStream(new byte[0]);
         when(mockMinioService.get(any())).thenReturn(inputStream);
 
-        FileResponse actual = fileService.getFile("incidentId", "mappedFileName.jpg");
+        FileResponse actual = fileService.getFile("incidentId", "fileName.jpg");
 
         FileResponse expected = new FileResponse("fileName.jpg", new byte[0]);
         assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
 
         verify(mockFileMapRepository, times(1))
-                .findFileMapByIncidentIdAndFileName("incidentId", "mappedFileName.jpg");
+                .findFileMapByIncidentIdAndFileName("incidentId", "fileName.jpg");
         ArgumentCaptor<Path> pathArgumentCaptor = ArgumentCaptor.forClass(Path.class);
         verify(mockMinioService, times(1)).get(pathArgumentCaptor.capture());
         assertThat(pathArgumentCaptor.getValue().toString()).isEqualTo("mappedFileName.jpg");
@@ -240,19 +240,20 @@ class FileServiceTest {
     @NullSource
     @MethodSource(value = "getData_getFile_FileMapped_GetFileUsingMappedName_FileMapNotFoundOnDatabase")
     void getFile_FileMapped_GetFileUsingMappedName_FileMapNotFoundOnDatabase(FileMap fileMap)
-            throws MinioException {
+            throws MinioException, FileServiceException {
 
         when(mockFileMapRepository.findFileMapByIncidentIdAndFileName(any(), any())).thenReturn(fileMap);
         InputStream inputStream = new ByteArrayInputStream(new byte[0]);
         when(mockMinioService.get(any())).thenReturn(inputStream);
 
-        FileServiceException fex = assertThrows(FileServiceException.class,
-                () -> fileService.getFile("incidentId", "mappedFileName.jpg"));
-        assertThat(fex.getStatus()).isEqualTo(FileServiceException.FILE_CANT_BE_FOUND);
+        FileResponse fileResponse = fileService.getFile("incidentId", "fileName.jpg");
 
         verify(mockFileMapRepository, times(1))
-                .findFileMapByIncidentIdAndFileName("incidentId", "mappedFileName.jpg");
-        verify(mockMinioService, times(0)).get(any());
+                .findFileMapByIncidentIdAndFileName("incidentId", "fileName.jpg");
+        ArgumentCaptor<Path> pathArgumentCaptor = ArgumentCaptor.forClass(Path.class);
+        //When file not found on the mapped file it will try to read file using original file name.
+        verify(mockMinioService, times(1)).get(pathArgumentCaptor.capture());
+        assertThat(pathArgumentCaptor.getValue().toString()).isEqualTo("fileName.jpg");
     }
 
     static Stream<Arguments> getData_getFile_FileMapped_GetFileUsingMappedName_FileMapNotFoundOnDatabase () {
@@ -289,16 +290,17 @@ class FileServiceTest {
 
         FileMap fileMap = new FileMap("id", "incidentId", "fileName.jpg", "mappedFileName.jpg");
         when(mockFileMapRepository.findFileMapByIncidentIdAndFileName(any(), any())).thenReturn(fileMap);
+
         InputStream inputStream = new FileInputStream(new ClassPathResource("circle-black-simple.png").getFile());
         inputStream.close();
         when(mockMinioService.get(any())).thenReturn(inputStream);
 
         FileServiceException fex = assertThrows(FileServiceException.class,
-                () -> fileService.getFile("mappedFileName.jpg"));
+                () -> fileService.getFile("incidentId", "mappedFileName.jpg"));
         assertThat(fex.getStatus()).isEqualTo(FileServiceException.CONNECTION_ISSUE);
 
-        verify(mockFileMapRepository, times(0))
-                .findFileMapByIncidentIdAndFileName(any(), any());
+        verify(mockFileMapRepository, times(1))
+                .findFileMapByIncidentIdAndFileName("incidentId", "mappedFileName.jpg");
         ArgumentCaptor<Path> pathArgumentCaptor = ArgumentCaptor.forClass(Path.class);
         verify(mockMinioService, times(1)).get(pathArgumentCaptor.capture());
         assertThat(pathArgumentCaptor.getValue().toString()).isEqualTo("mappedFileName.jpg");

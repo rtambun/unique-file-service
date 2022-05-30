@@ -109,42 +109,16 @@ public class FileUploadController {
 
     @GetMapping("/{object}")
     public ResponseEntity<byte[]> getObject(@PathVariable("object") String fileName) {
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-
-        ResponseEntity<byte[]> responseEntity;
-
-        try {
-            FileResponse fileResponse = fileService.getFile(fileName);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentDisposition(ContentDisposition.builder("inline")
-                    .filename(fileResponse.getFileName())
-                    .build());
-            headers.setContentType(MediaType.valueOf(URLConnection.guessContentTypeFromName(fileName)));
-            responseEntity = new ResponseEntity<>(fileResponse.getFileContent(), headers, HttpStatus.OK);
-        } catch (FileServiceException e) {
-            if (e.getStatus() == FileServiceException.FILE_CANT_BE_READ) {
-                LOGGER.error(String.format("Failed to retrieve object: %s. Exception : %s", fileName, e));
-                responseEntity = new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            } else {
-                if (e.getStatus() == FileServiceException.CONNECTION_ISSUE) {
-                    LOGGER.error(String.format("Failed to send response. Exception : %s", e));
-                } else {
-                    LOGGER.error("Unknown exception");
-                }
-                responseEntity = new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        }
-
-        stopWatch.stop();
-        LOGGER.info(String.format("Get %s in %d ms", fileName, stopWatch.getTotalTimeMillis()));
-        return responseEntity;
+        return retrieveFile(null, fileName);
     }
 
     @GetMapping("/v2/{object}")
     public ResponseEntity<byte[]> getObject(@PathVariable("object") String fileName,
                                             @RequestParam("incidentId") String incidentId) {
+        return retrieveFile(incidentId, fileName);
+    }
+
+    private ResponseEntity<byte[]> retrieveFile(String incidentId, String fileName) {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
@@ -160,18 +134,7 @@ public class FileUploadController {
             headers.setContentType(MediaType.valueOf(URLConnection.guessContentTypeFromName(fileName)));
             responseEntity = new ResponseEntity<>(fileResponse.getFileContent(), headers, HttpStatus.OK);
         } catch (FileServiceException e) {
-            if (e.getStatus() == FileServiceException.FILE_CANT_BE_READ ||
-                    e.getStatus() == FileServiceException.FILE_CANT_BE_FOUND) {
-                LOGGER.error(String.format("Failed to retrieve object: %s. Exception : %s", fileName, e));
-                responseEntity = new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            } else {
-                if (e.getStatus() == FileServiceException.CONNECTION_ISSUE) {
-                    LOGGER.error(String.format("Failed to send response. Exception : %s", e));
-                } else {
-                    LOGGER.error("Unknown exception");
-                }
-                responseEntity = new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+            responseEntity = new ResponseEntity<>(FileServiceException.mapExceptionToHttpStatus(e, fileName));
         }
 
         stopWatch.stop();
@@ -195,7 +158,7 @@ public class FileUploadController {
                 inputStream1 = videoService.getThumbnailForVideo(inputStream);
             } else {
                 response.setContentType(URLConnection.guessContentTypeFromName(object));
-                inputStream1 = imageService.getThumbnailForImage(inputStream);
+                inputStream1 = imageService.getThumbnail(object, null);
             }
             // Copy the stream to the response's output stream.
             IOUtils.copy(inputStream1, response.getOutputStream());
@@ -203,6 +166,8 @@ public class FileUploadController {
         }
         catch (Exception ex) {
             LOGGER.error(String.format("Failed to retrieve object: %s. Exception : %s", object, ex));
+        } catch (FileServiceException fex) {
+
         }
         stopWatch.stop();
         LOGGER.info(String.format("Thumbnail generated for %s in %d ms", object, stopWatch.getTotalTimeMillis()));

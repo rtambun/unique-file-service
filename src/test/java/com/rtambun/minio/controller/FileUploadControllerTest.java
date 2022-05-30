@@ -1,7 +1,6 @@
 package com.rtambun.minio.controller;
 
 import com.jlefebure.spring.boot.minio.MinioService;
-import com.rtambun.minio.controller.FileUploadController;
 import com.rtambun.minio.service.FileService;
 import com.rtambun.minio.service.FileServiceException;
 import com.rtambun.minio.core.ImageService;
@@ -101,14 +100,14 @@ class FileUploadControllerTest {
     }
 
     @Test
-    public void getObject() throws FileServiceException {
+    public void getObject_v1() throws FileServiceException {
 
         FileResponse fileResponse = new FileResponse("fileName.jpg", new byte[0]);
-        when(mockFileService.getFile(any())).thenReturn(fileResponse);
+        when(mockFileService.getFile(any(), any())).thenReturn(fileResponse);
 
         ResponseEntity<byte[]> actual = fileUploadController.getObject("fileName.jpg");
 
-        verify(mockFileService, times(1)).getFile("fileName.jpg");
+        verify(mockFileService, times(1)).getFile(null, "fileName.jpg");
 
         assertThat(actual.getHeaders().getContentDisposition().getFilename()).isEqualTo("fileName.jpg");
         assert actual.getHeaders().getContentType() != null;
@@ -117,27 +116,69 @@ class FileUploadControllerTest {
     }
 
     @Test
-    public void getObject_ThrowFileException() throws FileServiceException {
+    public void getObject_v1_ThrowFileException() throws FileServiceException {
 
         FileResponse fileResponse = new FileResponse("fileName.jpg", new byte[0]);
-        when(mockFileService.getFile(any())).thenThrow(new FileServiceException(FileServiceException.FILE_CANT_BE_READ));
+        when(mockFileService.getFile(any(), any())).thenThrow(new FileServiceException(FileServiceException.FILE_CANT_BE_READ));
 
         ResponseEntity<byte[]> actual = fileUploadController.getObject("fileName.jpg");
 
-        verify(mockFileService, times(1)).getFile("fileName.jpg");
+        verify(mockFileService, times(1)).getFile(null, "fileName.jpg");
 
         assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
-    public void getObject_ThrowIOException() throws FileServiceException {
+    public void getObject_v1_ThrowIOException() throws FileServiceException {
 
         FileResponse fileResponse = new FileResponse("fileName.jpg", new byte[0]);
-        when(mockFileService.getFile(any())).thenThrow(new FileServiceException(FileServiceException.CONNECTION_ISSUE));
+        when(mockFileService.getFile(any(), any())).thenThrow(new FileServiceException(FileServiceException.CONNECTION_ISSUE));
 
         ResponseEntity<byte[]> actual = fileUploadController.getObject("fileName.jpg");
 
-        verify(mockFileService, times(1)).getFile("fileName.jpg");
+        verify(mockFileService, times(1)).getFile(null, "fileName.jpg");
+
+        assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    public void getObject_v2() throws FileServiceException {
+
+        FileResponse fileResponse = new FileResponse("fileName.jpg", new byte[0]);
+        when(mockFileService.getFile(any(), any())).thenReturn(fileResponse);
+
+        ResponseEntity<byte[]> actual = fileUploadController.getObject("fileName.jpg", "incidentId");
+
+        verify(mockFileService, times(1)).getFile("incidentId", "fileName.jpg");
+
+        assertThat(actual.getHeaders().getContentDisposition().getFilename()).isEqualTo("fileName.jpg");
+        assert actual.getHeaders().getContentType() != null;
+        assertThat(actual.getHeaders().getContentType().toString()).isEqualTo("image/jpeg");
+        assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    public void getObject_v2_ThrowFileException() throws FileServiceException {
+
+        FileResponse fileResponse = new FileResponse("fileName.jpg", new byte[0]);
+        when(mockFileService.getFile(any(), any())).thenThrow(new FileServiceException(FileServiceException.FILE_CANT_BE_READ));
+
+        ResponseEntity<byte[]> actual = fileUploadController.getObject("fileName.jpg", "incidentId");
+
+        verify(mockFileService, times(1)).getFile("incidentId", "fileName.jpg");
+
+        assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    public void getObject_v2_ThrowIOException() throws FileServiceException {
+
+        FileResponse fileResponse = new FileResponse("fileName.jpg", new byte[0]);
+        when(mockFileService.getFile(any(), any())).thenThrow(new FileServiceException(FileServiceException.CONNECTION_ISSUE));
+
+        ResponseEntity<byte[]> actual = fileUploadController.getObject("fileName.jpg", "incidentId");
+
+        verify(mockFileService, times(1)).getFile("incidentId", "fileName.jpg");
 
         assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }

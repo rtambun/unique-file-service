@@ -76,30 +76,33 @@ public class FileService {
         }
     }
 
-    public FileResponse getFile(String fileName) throws FileServiceException {
-        FileMap fileMap = new FileMap(null, null, fileName, fileName);
-        return getFile(fileMap);
-    }
-
     public FileResponse getFile(String incidentId, String fileName) throws FileServiceException {
-        FileMap fileMap = fileMapRepository.findFileMapByIncidentIdAndFileName(incidentId, fileName);
-        if (fileMap == null || fileMap.getId() == null || fileMap.getId().isEmpty()) {
-            log.error("File {} for incident {} cant be found ", fileName, incidentId);
-            throw new FileServiceException(FileServiceException.FILE_CANT_BE_FOUND);
-        }
-        return getFile(fileMap);
-    }
-
-    private FileResponse getFile (FileMap fileMap) throws FileServiceException {
-        String fileName = fileMap.getFileName();
-        try (InputStream inputStream = minioService.get(of(fileMap.getMappedFileName()))) {
+        try (InputStream inputStream = getFileAsInputStream(incidentId, fileName)) {
             return new FileResponse(fileName, inputStream.readAllBytes());
-        } catch (MinioException minioException) {
-            log.error("Failed to retrieve object: {}. Exception : {}}", fileName, minioException);
-            throw new FileServiceException(FileServiceException.FILE_CANT_BE_READ);
         } catch (IOException ioException) {
             log.error("Failed while connecting to minio: {}. Exception : {}", fileName, ioException);
             throw new FileServiceException(FileServiceException.CONNECTION_ISSUE);
         }
+    }
+
+    public InputStream getFileAsInputStream(String incidentId, String fileName) throws FileServiceException {
+        FileMap fileMap;
+        if (incidentId == null) {
+            fileMap  = new FileMap(null, null, fileName, fileName);
+        } else {
+            fileMap = fileMapRepository.findFileMapByIncidentIdAndFileName(incidentId, fileName);
+            if (fileMap == null || fileMap.getId() == null || fileMap.getId().isEmpty()) {
+                fileMap  = new FileMap(null, null, fileName, fileName);
+            }
+        }
+
+        InputStream inputStream;
+        try {
+            inputStream = minioService.get(of(fileMap.getMappedFileName()));
+        } catch (MinioException minioException) {
+            log.error("Failed to retrieve object: {}. Exception : {}}", fileName, minioException);
+            throw new FileServiceException(FileServiceException.FILE_CANT_BE_READ);
+        }
+        return inputStream;
     }
 }
