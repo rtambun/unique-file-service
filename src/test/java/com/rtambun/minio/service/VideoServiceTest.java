@@ -1,8 +1,10 @@
-package com.rtambun.minio.core;
+package com.rtambun.minio.service;
 
 import com.rtambun.minio.config.ApplicationProperties;
+import com.rtambun.minio.service.Constants;
 import com.rtambun.minio.service.FileService;
 import com.rtambun.minio.service.FileServiceException;
+import com.rtambun.minio.service.VideoService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

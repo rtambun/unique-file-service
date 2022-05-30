@@ -1,12 +1,10 @@
 package com.rtambun.minio.controller;
 
-import com.google.api.client.util.IOUtils;
-import com.jlefebure.spring.boot.minio.MinioException;
 import com.jlefebure.spring.boot.minio.MinioService;
-import com.rtambun.minio.core.IThumbnailService;
-import com.rtambun.minio.core.ImageService;
-import com.rtambun.minio.core.UploadService;
-import com.rtambun.minio.core.VideoService;
+import com.rtambun.minio.service.IThumbnailService;
+import com.rtambun.minio.service.ImageService;
+import com.rtambun.minio.service.UploadService;
+import com.rtambun.minio.service.VideoService;
 import com.rtambun.minio.dto.FileResponse;
 import com.rtambun.minio.service.FileService;
 import com.rtambun.minio.service.FileServiceException;
@@ -19,7 +17,6 @@ import org.springframework.util.StopWatch;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,7 +24,7 @@ import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.rtambun.minio.core.Constants.*;
+import static com.rtambun.minio.service.Constants.*;
 import static java.nio.file.Path.of;
 
 @RestController

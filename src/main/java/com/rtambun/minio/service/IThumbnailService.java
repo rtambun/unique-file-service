@@ -1,4 +1,4 @@
-package com.rtambun.minio.core;
+package com.rtambun.minio.service;
 
 import com.rtambun.minio.service.FileServiceException;
 import org.springframework.http.HttpHeaders;
