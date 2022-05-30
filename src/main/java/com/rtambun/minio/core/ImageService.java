@@ -26,12 +26,12 @@ import static com.rtambun.minio.core.Constants.DEFAULT_THUMBNAIL_WIDTH_KEY;
  * like getting thumbnail, rotating an image and so on
  */
 @Service
-public class ImageService implements IThumbNailService {
+public class ImageService implements IThumbnailService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
 
-    private ApplicationProperties applicationProperties;
-    private FileService fileService;
+    private final ApplicationProperties applicationProperties;
+    private final FileService fileService;
 
     public ImageService(ApplicationProperties applicationProperties, FileService fileService) {
         this.applicationProperties = applicationProperties;

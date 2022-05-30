@@ -3,6 +3,7 @@ package com.rtambun.minio.controller;
 import com.google.api.client.util.IOUtils;
 import com.jlefebure.spring.boot.minio.MinioException;
 import com.jlefebure.spring.boot.minio.MinioService;
+import com.rtambun.minio.core.IThumbnailService;
 import com.rtambun.minio.core.ImageService;
 import com.rtambun.minio.core.UploadService;
 import com.rtambun.minio.core.VideoService;
@@ -34,12 +35,12 @@ import static java.nio.file.Path.of;
 public class FileUploadController {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileUploadController.class);
 
-    private FileService fileService;
-    private MinioService minioService;
-    private ImageService imageService;
-    private VideoService videoService;
-    private UploadService uploadService;
-    private String url;
+    private final FileService fileService;
+    private final MinioService minioService;
+    private final ImageService imageService;
+    private final VideoService videoService;
+    private final UploadService uploadService;
+    private final String url;
 
     private static final String SUCCESS = "success";
     private static final String FALSE = "false";
@@ -143,33 +144,55 @@ public class FileUploadController {
     }
 
     @GetMapping("thumb/{object}")
-    public void getThumbnail(@PathVariable("object") String object, HttpServletResponse response) {
+    public ResponseEntity<byte[]> getThumbnail(@PathVariable("object") String object) {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         LOGGER.info("Get thumbnail");
-        try {
-            InputStream inputStream = minioService.get(of(object));
-            String extension = object.substring(object.lastIndexOf('.') + 1);
-            // Set the content type and attachment header.
-            response.addHeader(CONTENT_DISPOSITION, ATTACHMENT_FILENAME + object);
-            InputStream inputStream1;
-            if (extension.equals(MP4) || extension.equals(AVI) ) {
-                response.setContentType(IMAGE_CONTENT_TYPE);
-                inputStream1 = videoService.getThumbnailForVideo(inputStream);
-            } else {
-                response.setContentType(URLConnection.guessContentTypeFromName(object));
-                inputStream1 = imageService.getThumbnail(object, null);
-            }
-            // Copy the stream to the response's output stream.
-            IOUtils.copy(inputStream1, response.getOutputStream());
-            response.flushBuffer();
-        }
-        catch (Exception ex) {
-            LOGGER.error(String.format("Failed to retrieve object: %s. Exception : %s", object, ex));
-        } catch (FileServiceException fex) {
 
-        }
+        ResponseEntity<byte[]> response = retrieveThumbnailCommon(null, object);
+
         stopWatch.stop();
         LOGGER.info(String.format("Thumbnail generated for %s in %d ms", object, stopWatch.getTotalTimeMillis()));
+
+        return response;
+    }
+
+    @GetMapping("thumb/v2/{object}")
+    public ResponseEntity<byte[]> getThumbnail(@PathVariable("object") String object,
+                                               @RequestParam("incidentId") String incidentId) {
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        LOGGER.info("Get thumbnail v2");
+
+        ResponseEntity<byte[]> response = retrieveThumbnailCommon(incidentId, object);
+
+        stopWatch.stop();
+        LOGGER.info(String.format("Thumbnail generated for %s in %d ms", object, stopWatch.getTotalTimeMillis()));
+        return response;
+    }
+
+    private ResponseEntity<byte[]> retrieveThumbnailCommon(String incidentId, String fileName) {
+        IThumbnailService thumbnailService;
+        String extension = fileName.substring(fileName.lastIndexOf('.') + 1);
+        if (extension.equals(MP4) || extension.equals(AVI) ) {
+            thumbnailService = videoService;
+        } else {
+            thumbnailService = imageService;
+        }
+
+        ResponseEntity<byte[]> response;
+        try (InputStream thumbnailStream = thumbnailService.getThumbnail(incidentId, fileName)) {
+            response = new ResponseEntity<>(thumbnailStream.readAllBytes(),
+                    thumbnailService.buildHttpHeader(fileName),
+                    HttpStatus.OK);
+        }
+        catch (FileServiceException ex) {
+            LOGGER.error(String.format("Failed to retrieve object: %s. Exception : %s", fileName, ex));
+            response = new ResponseEntity<>(FileServiceException.mapExceptionToHttpStatus(ex, fileName));
+        } catch (IOException ex) {
+            LOGGER.error("Issue when reading thumbnail stream, {}", ex.getMessage());
+            response = new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return response;
     }
 }

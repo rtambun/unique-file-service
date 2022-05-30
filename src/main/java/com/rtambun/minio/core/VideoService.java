@@ -1,6 +1,8 @@
 package com.rtambun.minio.core;
 
 import com.rtambun.minio.config.ApplicationProperties;
+import com.rtambun.minio.service.FileService;
+import com.rtambun.minio.service.FileServiceException;
 import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.filters.Rotation;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -9,7 +11,9 @@ import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.Java2DFrameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
@@ -26,47 +30,68 @@ import static com.rtambun.minio.core.Constants.*;
  * like getting thumbnail of video
  */
 @Service
-public class VideoService {
+public class VideoService implements IThumbnailService{
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VideoService.class);
     private static final String ROTATE = "rotate";
 
-    @Autowired
-    private ApplicationProperties applicationProperties;
+    private final ApplicationProperties applicationProperties;
+    private final FileService fileService;
+
+    public VideoService(ApplicationProperties applicationProperties, FileService fileService) {
+        this.applicationProperties = applicationProperties;
+        this.fileService = fileService;
+    }
+
     /**
      * Get thumbnail from a video file's inputStream
-     * @param inputStream - strem contains video data
-     * @return stream contains thumbnail of video
-     * @throws IOException thrown when
+     * @param incidentId of the video file that will be retrieved, null if video file is not stored using unique id
+     * @param fileName of the video file
+     * @return inputStream contains thumbnail of corresponding video
+     * @throws FileServiceException
      */
-    public InputStream getThumbnailForVideo(InputStream inputStream) throws IOException {
+    public InputStream getThumbnail(String incidentId, String fileName) throws FileServiceException {
         LOGGER.info("Resize Image with BufferedImage");
 
         ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
-        BufferedImageWrapper bufferedImageWrapper = getBufferedImageFromVideo(inputStream);
-        BufferedImage bufferedImage= bufferedImageWrapper.getBufferedImage();
+        try (InputStream inputStream = fileService.getFileAsInputStream(incidentId, fileName)) {
+            BufferedImageWrapper bufferedImageWrapper = getBufferedImageFromVideo(inputStream);
+            BufferedImage bufferedImage= bufferedImageWrapper.getBufferedImage();
 
-        if (bufferedImage != null) {
-            String rotationMetaData= bufferedImageWrapper.getRotation();
-            if(rotationMetaData!=null && (!rotationMetaData.isEmpty())) {
-                try {
-                    int iRotationMetaData = Integer.parseInt(rotationMetaData);
-                    bufferedImage=Rotation.newRotator(iRotationMetaData).apply(bufferedImage);
-                }catch (NumberFormatException exception){
-                    LOGGER.warn("rotation not a number, so no rotation done");
+            if (bufferedImage != null) {
+                String rotationMetaData= bufferedImageWrapper.getRotation();
+                if(rotationMetaData!=null && (!rotationMetaData.isEmpty())) {
+                    try {
+                        int iRotationMetaData = Integer.parseInt(rotationMetaData);
+                        bufferedImage=Rotation.newRotator(iRotationMetaData).apply(bufferedImage);
+                    }catch (NumberFormatException exception){
+                        LOGGER.warn("rotation not a number, so no rotation done");
+                    }
                 }
+                Thumbnails.of(bufferedImage)
+                        .size(Integer.parseInt(applicationProperties.getConfigValue(DEFAULT_THUMBNAIL_WIDTH_KEY)),
+                                Integer.parseInt(applicationProperties.getConfigValue(DEFAULT_THUMBNAIL_HEIGHT_KEY)))
+                        .outputFormat(JPG)
+                        .toOutputStream(baos1);
             }
-            Thumbnails.of(bufferedImage)
-                    .size(Integer.parseInt(applicationProperties.getConfigValue(DEFAULT_THUMBNAIL_WIDTH_KEY)),
-                            Integer.parseInt(applicationProperties.getConfigValue(DEFAULT_THUMBNAIL_HEIGHT_KEY)))
-                    .outputFormat(JPG)
-                    .toOutputStream(baos1);
-        }
-        else {
-            LOGGER.info("Buffered Thumbnail is empty");
+            else {
+                LOGGER.info("Buffered Thumbnail is empty");
+            }
+        } catch (IOException exception) {
+            LOGGER.info("Error when working with the stream {}", exception.getLocalizedMessage());
+            throw new FileServiceException(FileServiceException.CONNECTION_ISSUE);
         }
 
         return new ByteArrayInputStream(baos1.toByteArray());
+    }
+
+    public HttpHeaders buildHttpHeader(String fileName) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(ContentDisposition.builder("inline")
+                .filename(fileName)
+                .build());
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        return headers;
     }
 
     /**
@@ -115,5 +140,4 @@ public class VideoService {
 
         return new BufferedImageWrapper(bi,rotate);
     }
-
 }
