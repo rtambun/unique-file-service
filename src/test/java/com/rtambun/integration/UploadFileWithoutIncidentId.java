@@ -6,11 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rtambun.integration.container.FileMapRepositoryContainer;
 import com.rtambun.integration.container.MinioClientContainer;
 import com.rtambun.integration.container.MinioContainer;
+import com.rtambun.integration.util.TestUtil;
 import com.rtambun.minio.SpringBootMinioApplication;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -62,47 +65,32 @@ public class UploadFileWithoutIncidentId {
     @LocalServerPort
     private int randomServerPort;
 
-    @Test
-    public void testUploadFile() throws URISyntaxException, JsonProcessingException {
+    @ParameterizedTest
+    @ValueSource(strings = {"circle-black-simple.png", "v2/incidentId/circle-black-simple.png"})
+    public void testFileProcessing(String relativePathForDelete) throws URISyntaxException, JsonProcessingException {
+        String fileName = "circle-black-simple.png";
 
         String baseUrl = "http://localhost:" + randomServerPort + "/files";
-        URI uri = new URI(baseUrl);
 
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
-        String path = "circle-black-simple.png";
-        map.add("file", new ClassPathResource(path));
+        TestUtil.uploadFileOk("circle-black-simple.png", baseUrl, restTemplate);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        String getFileUrl = baseUrl + "/" + fileName;
+        TestUtil.getFileOk(fileName, getFileUrl, restTemplate);
 
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(map, headers);
+        String getFileUrl_v2 = baseUrl + "/v2/" + fileName + "?incidentId=incidentId";
+        TestUtil.getFileOk(fileName, getFileUrl_v2, restTemplate);
 
-        ResponseEntity<Object> response = restTemplate.postForEntity(uri, requestEntity, Object.class);
+        String getThumbNailUrl = baseUrl + "/thumb/" + fileName;
+        TestUtil.getThumbNailOk(fileName, getThumbNailUrl, 4782, restTemplate);
 
-        assert response.getBody() != null;
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonPayload = objectMapper.writeValueAsString(response.getBody());
-        HashMap<String, String> responseBody = objectMapper.readValue(jsonPayload, new TypeReference<>() {});
-        assert responseBody != null;
-        String success = responseBody.get("success");
-        assertThat(success).isEqualTo("true");
-        String url = responseBody.get("url");
-        assertThat(url.contains(MinioContainer.MINIO_RESPONSE_URL)).isTrue();
+        String getThumbNailUrl_v2 = baseUrl + "/thumb/v2/" + fileName + "?incidentId=incidentId";
+        TestUtil.getThumbNailOk(fileName, getThumbNailUrl_v2, 4782, restTemplate);
 
-        String fileName = url.replace(MinioContainer.MINIO_RESPONSE_URL, "");
-        assertThat(fileName).isEqualTo(path);
+        String deleteFileUrl = baseUrl + "/" + relativePathForDelete;
+        TestUtil.deleteFile(deleteFileUrl, restTemplate);
 
-        uri = new URI("http://localhost:" + randomServerPort + "/files/" + fileName);
-
-        ResponseEntity<byte[]> getResponse = restTemplate.getForEntity(uri, byte[].class);
-        ContentDisposition contentDisposition = getResponse.getHeaders().getContentDisposition();
-        assertThat(contentDisposition.getFilename()).isEqualTo(path);
-        assertThat(getResponse.getStatusCode().value()).isEqualTo(HttpStatus.OK.value());
-
-        uri = new URI("http://localhost:" + randomServerPort + "/files/v2/" + fileName + "?incidentId=incidentId");
-
-        getResponse = restTemplate.getForEntity(uri, byte[].class);
-        assertThat(getResponse.getStatusCode().value()).isEqualTo(HttpStatus.NOT_FOUND.value());
+        TestUtil.getFileNok(getFileUrl, HttpStatus.NOT_FOUND, restTemplate);
+        TestUtil.getFileNok(getFileUrl_v2, HttpStatus.NOT_FOUND, restTemplate);
     }
 
 }
