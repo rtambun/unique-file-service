@@ -3,10 +3,7 @@ package com.rtambun.minio.service;
 import com.rtambun.minio.config.ApplicationProperties;
 import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.filters.Rotation;
-import org.bytedeco.javacv.FFmpegFrameGrabber;
-import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.FrameGrabber;
-import org.bytedeco.javacv.Java2DFrameUtils;
+import org.bytedeco.javacv.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ContentDisposition;
@@ -117,6 +114,7 @@ public class VideoService implements IThumbnailService{
         int startFrame = grabber.getLengthInVideoFrames() / 2;
         grabber.setVideoFrameNumber(startFrame);
         BufferedImage bi = null;
+        Java2DFrameConverter java2DFrameConverter = new Java2DFrameConverter();
         try {
             for (int i = startFrame; i < grabber.getLengthInFrames(); i++) {
                 try {
@@ -125,7 +123,7 @@ public class VideoService implements IThumbnailService{
                         LOGGER.info("Frame is empty.");
                         continue;
                     }
-                    bi = Java2DFrameUtils.toBufferedImage(frame);
+                    bi = java2DFrameConverter.getBufferedImage(frame);
                     break;
                 } catch (FrameGrabber.Exception t) {
                     LOGGER.error("Exception thrown."+t.getMessage());
