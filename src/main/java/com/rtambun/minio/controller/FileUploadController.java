@@ -64,14 +64,14 @@ public class FileUploadController {
         return minioService.list();
     }
 
-    @PostMapping
-    public ResponseEntity<Object> addAttachment(@NotNull @RequestParam("file") MultipartFile file) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Object> addAttachment(@NotNull @RequestPart("file") MultipartFile file) {
         return uploadService.addAttachment(file,url,minioService);
     }
 
-    @PostMapping("/v2/{incidentId}")
+    @PostMapping(value = "/v2/{incidentId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Object> addAttachment(@PathVariable("incidentId") String incidentId,
-                                                @NotNull @RequestParam("file") MultipartFile file) {
+                                                @NotNull @RequestPart("file") MultipartFile file) {
 
         HashMap<String, String> responseObj = new HashMap<>();
         HttpStatus status;

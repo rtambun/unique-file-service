@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  elastic-search:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.2
+    environment:
+      - discovery.type=single-node
+      - node.name=es01
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ELASTIC_PASSWORD=password"
+    ports:
+      - "9200:9200"
+
+  minio:
+    image: minio/minio
+    environment:
+      MINIO_ROOT_USER : minioadmin
+      MINIO_ROOT_PASSWORD : minioadmin
+    volumes:
+      - "/data"
+    command: server --console-address ":9001" /data
+    expose:
+      - "9000"
+      - "9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  miniomc:
+    build: .
