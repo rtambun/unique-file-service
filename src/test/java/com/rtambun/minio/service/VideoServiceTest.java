@@ -2,6 +2,8 @@ package com.rtambun.minio.service;
 
 import com.rtambun.minio.config.ApplicationProperties;
 import lombok.extern.slf4j.Slf4j;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.FrameGrabber;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,6 +33,14 @@ class VideoServiceTest {
     private ApplicationProperties mockApplicationProperties;
     private FileService mockFileService;
     private VideoService videoService;
+
+    static {
+        try {
+            FFmpegFrameGrabber.tryLoad();
+        } catch (FrameGrabber.Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     @BeforeEach
     public void setUp() {
