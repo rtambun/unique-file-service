@@ -1,11 +1,10 @@
 package com.rtambun.minio.service;
 
 import com.rtambun.minio.config.ApplicationProperties;
+import lombok.extern.log4j.Log4j2;
 import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.filters.Rotation;
 import org.bytedeco.javacv.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -25,9 +24,9 @@ import static com.rtambun.minio.service.Constants.*;
  * like getting thumbnail of video
  */
 @Service
+@Log4j2
 public class VideoService implements IThumbnailService{
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(VideoService.class);
     private static final String ROTATE = "rotate";
 
     private final ApplicationProperties applicationProperties;
@@ -46,7 +45,7 @@ public class VideoService implements IThumbnailService{
      * @throws FileServiceException thrown when file is not found or issue with filestream generated
      */
     public InputStream getThumbnail(String incidentId, String fileName) throws FileServiceException {
-        LOGGER.info("Resize Image with BufferedImage");
+        log.info("Resize Image with BufferedImage");
 
         ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
         try (InputStream inputStream = fileService.getFileAsInputStream(incidentId, fileName)) {
@@ -60,7 +59,7 @@ public class VideoService implements IThumbnailService{
                         int iRotationMetaData = Integer.parseInt(rotationMetaData);
                         bufferedImage=Rotation.newRotator(iRotationMetaData).apply(bufferedImage);
                     }catch (NumberFormatException exception){
-                        LOGGER.warn("rotation not a number, so no rotation done");
+                        log.warn("rotation not a number, so no rotation done");
                     }
                 }
                 Thumbnails.of(bufferedImage)
@@ -70,10 +69,10 @@ public class VideoService implements IThumbnailService{
                         .toOutputStream(baos1);
             }
             else {
-                LOGGER.info("Buffered Thumbnail is empty");
+                log.info("Buffered Thumbnail is empty");
             }
         } catch (IOException exception) {
-            LOGGER.info("Error when working with the stream {}", exception.getLocalizedMessage());
+            log.info("Error when working with the stream {}", exception.getLocalizedMessage());
             throw new FileServiceException(FileServiceException.CONNECTION_ISSUE);
         }
 
@@ -96,16 +95,16 @@ public class VideoService implements IThumbnailService{
      * @throws IOException thrown when creating buffered image
      */
     private BufferedImageWrapper getBufferedImageFromVideo(InputStream inputStream) throws IOException {
-        LOGGER.info("GenerateVideoThumbnail");
+        log.info("GenerateVideoThumbnail");
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputStream);
         grabber.setFormat(MP4);
         grabber.start();
         String rotate = grabber.getVideoMetadata(ROTATE);
 
         if(rotate!=null){
-            LOGGER.info("rotate is "+rotate);
+            log.info("rotate is "+rotate);
         }else {
-            LOGGER.info("rotate is null");
+            log.info("rotate is null");
         }
 
         /*
@@ -120,13 +119,13 @@ public class VideoService implements IThumbnailService{
                 try {
                     Frame frame = grabber.grab();
                     if (frame == null) {
-                        LOGGER.info("Frame is empty.");
+                        log.info("Frame is empty.");
                         continue;
                     }
                     bi = java2DFrameConverter.getBufferedImage(frame);
                     break;
                 } catch (FrameGrabber.Exception t) {
-                    LOGGER.error("Exception thrown."+t.getMessage());
+                    log.error("Exception thrown."+t.getMessage());
                 }
             }
         } finally {

@@ -1,9 +1,8 @@
 package com.rtambun.minio.service;
 
 import com.rtambun.minio.config.ApplicationProperties;
+import lombok.extern.log4j.Log4j2;
 import net.coobird.thumbnailator.Thumbnails;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -24,9 +23,8 @@ import static com.rtambun.minio.service.Constants.DEFAULT_THUMBNAIL_WIDTH_KEY;
  * like getting thumbnail, rotating an image and so on
  */
 @Service
+@Log4j2
 public class ImageService implements IThumbnailService {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
 
     private final ApplicationProperties applicationProperties;
     private final FileService fileService;
@@ -45,7 +43,7 @@ public class ImageService implements IThumbnailService {
      * @throws FileServiceException thrown when file is not found or issue with filestream generated
      */
     public InputStream getThumbnail(String incidentId, String fileName) throws FileServiceException {
-        LOGGER.info("Resize Image with Input Stream");
+        log.info("Resize Image with Input Stream");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (InputStream inputStream = fileService.getFileAsInputStream(incidentId, fileName)) {
             Thumbnails.of(inputStream)
@@ -53,7 +51,7 @@ public class ImageService implements IThumbnailService {
                             Integer.parseInt(applicationProperties.getConfigValue(DEFAULT_THUMBNAIL_HEIGHT_KEY)))
                     .toOutputStream(baos);
         } catch (IOException ex) {
-            LOGGER.error("Issue when reading input stream to get image thumbnail");
+            log.error("Issue when reading input stream to get image thumbnail");
             throw new FileServiceException(FileServiceException.CONNECTION_ISSUE);
         }
         return new ByteArrayInputStream(baos.toByteArray());

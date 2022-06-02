@@ -9,8 +9,7 @@ import com.rtambun.minio.dto.FileResponse;
 import com.rtambun.minio.service.FileService;
 import com.rtambun.minio.service.FileServiceException;
 import io.minio.messages.Item;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.util.StopWatch;
@@ -25,13 +24,11 @@ import java.util.HashMap;
 import java.util.List;
 
 import static com.rtambun.minio.service.Constants.*;
-import static java.nio.file.Path.of;
 
 @RestController
 @RequestMapping("/files")
+@Log4j2
 public class FileUploadController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileUploadController.class);
-
     private final FileService fileService;
     private final MinioService minioService;
     private final ImageService imageService;
@@ -60,7 +57,7 @@ public class FileUploadController {
 
     @GetMapping
     public List<Item> testMinio() {
-        LOGGER.info("Get All Files");
+        log.info("Get All Files");
         return minioService.list();
     }
 
@@ -82,7 +79,7 @@ public class FileUploadController {
             responseObj.put(URL, url + fileResponse.getFileName());
             status = HttpStatus.OK;
         } catch (FileServiceException exception) {
-            LOGGER.error("Error while add attachment to storage, {}", exception.getStatus());
+            log.error("Error while add attachment to storage, {}", exception.getStatus());
             responseObj.put(SUCCESS, FALSE);
             if (exception.getStatus() == FileServiceException.FILE_NAME_NOT_PROVIDED) {
                 status = HttpStatus.UNPROCESSABLE_ENTITY;
@@ -150,7 +147,7 @@ public class FileUploadController {
         }
 
         stopWatch.stop();
-        LOGGER.info(String.format("Get %s in %d ms", fileName, stopWatch.getTotalTimeMillis()));
+        log.info(String.format("Get %s in %d ms", fileName, stopWatch.getTotalTimeMillis()));
         return responseEntity;
     }
 
@@ -158,12 +155,12 @@ public class FileUploadController {
     public ResponseEntity<byte[]> getThumbnail(@PathVariable("object") String object) {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        LOGGER.info("Get thumbnail");
+        log.info("Get thumbnail");
 
         ResponseEntity<byte[]> response = retrieveThumbnailCommon(null, object);
 
         stopWatch.stop();
-        LOGGER.info(String.format("Thumbnail generated for %s in %d ms", object, stopWatch.getTotalTimeMillis()));
+        log.info(String.format("Thumbnail generated for %s in %d ms", object, stopWatch.getTotalTimeMillis()));
 
         return response;
     }
@@ -173,12 +170,12 @@ public class FileUploadController {
                                                @RequestParam("incidentId") String incidentId) {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        LOGGER.info("Get thumbnail v2");
+        log.info("Get thumbnail v2");
 
         ResponseEntity<byte[]> response = retrieveThumbnailCommon(incidentId, object);
 
         stopWatch.stop();
-        LOGGER.info(String.format("Thumbnail generated for %s in %d ms", object, stopWatch.getTotalTimeMillis()));
+        log.info(String.format("Thumbnail generated for %s in %d ms", object, stopWatch.getTotalTimeMillis()));
         return response;
     }
 
@@ -198,10 +195,10 @@ public class FileUploadController {
                     HttpStatus.OK);
         }
         catch (FileServiceException ex) {
-            LOGGER.error(String.format("Failed to retrieve object: %s. Exception : %s", fileName, ex));
+            log.error(String.format("Failed to retrieve object: %s. Exception : %s", fileName, ex));
             response = new ResponseEntity<>(FileServiceException.mapExceptionToHttpStatus(ex, fileName));
         } catch (IOException ex) {
-            LOGGER.error("Issue when reading thumbnail stream, {}", ex.getMessage());
+            log.error("Issue when reading thumbnail stream, {}", ex.getMessage());
             response = new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return response;
