@@ -1,10 +1,6 @@
 package com.rtambun.minio.service;
 
 import com.rtambun.minio.config.ApplicationProperties;
-import com.rtambun.minio.service.Constants;
-import com.rtambun.minio.service.FileService;
-import com.rtambun.minio.service.FileServiceException;
-import com.rtambun.minio.service.VideoService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,6 +56,10 @@ class VideoServiceTest {
         log.info("Size of thumbnail {}", thumbNail.length);
         assertThat(thumbNail).isNotEmpty();
         assertThat(thumbNail.length).isEqualTo(4878);
+
+        FileInputStream fis = new FileInputStream(new ClassPathResource("sample-thumb.jpg").getFile());
+        byte[] expectedThumbnail = fis.readAllBytes();
+        assertThat(thumbNail).containsExactly(expectedThumbnail);
 
         verify(mockFileService, times(1))
                 .getFileAsInputStream("incidentId", "sample.mp4");
