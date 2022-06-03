@@ -282,7 +282,7 @@ class FileUploadControllerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"sample.mp4", "sample.avi"})
+    @ValueSource(strings = {"sample-rotate.mp4", "sample.avi"})
     public void getThumbNail_v1_getThumbNailVideo(String objectName) throws IOException, FileServiceException {
         String fileName = "circle-black-simple.png";
         InputStream inputStream = new FileInputStream(new ClassPathResource(fileName).getFile());
@@ -373,7 +373,7 @@ class FileUploadControllerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"sample.mp4", "sample.avi"})
+    @ValueSource(strings = {"sample-rotate.mp4", "sample.avi"})
     public void getThumbNail_v2_getThumbNailVideo(String objectName) throws IOException, FileServiceException {
         String fileName = "circle-black-simple.png";
         InputStream inputStream = new FileInputStream(new ClassPathResource(fileName).getFile());
