@@ -47,8 +47,8 @@ public class VideoService implements IThumbnailService{
     public InputStream getThumbnail(String incidentId, String fileName) throws FileServiceException {
         log.info("Resize Image with BufferedImage");
 
-        ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
-        try (InputStream inputStream = fileService.getFileAsInputStream(incidentId, fileName)) {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+             InputStream inputStream = fileService.getFileAsInputStream(incidentId, fileName)) {
             BufferedImageWrapper bufferedImageWrapper = getBufferedImageFromVideo(inputStream);
             BufferedImage bufferedImage= bufferedImageWrapper.getBufferedImage();
 
@@ -66,17 +66,17 @@ public class VideoService implements IThumbnailService{
                         .size(Integer.parseInt(applicationProperties.getConfigValue(DEFAULT_THUMBNAIL_WIDTH_KEY)),
                                 Integer.parseInt(applicationProperties.getConfigValue(DEFAULT_THUMBNAIL_HEIGHT_KEY)))
                         .outputFormat(JPG)
-                        .toOutputStream(baos1);
+                        .toOutputStream(outputStream);
             }
             else {
                 log.info("Buffered Thumbnail is empty");
             }
+
+            return new ByteArrayInputStream(outputStream.toByteArray());
         } catch (IOException exception) {
             log.info("Error when working with the stream {}", exception.getLocalizedMessage());
             throw new FileServiceException(FileServiceException.CONNECTION_ISSUE);
         }
-
-        return new ByteArrayInputStream(baos1.toByteArray());
     }
 
     public HttpHeaders buildHttpHeader(String fileName) {

@@ -44,17 +44,17 @@ public class ImageService implements IThumbnailService {
      */
     public InputStream getThumbnail(String incidentId, String fileName) throws FileServiceException {
         log.info("Resize Image with Input Stream");
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (InputStream inputStream = fileService.getFileAsInputStream(incidentId, fileName)) {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+             InputStream inputStream = fileService.getFileAsInputStream(incidentId, fileName)) {
             Thumbnails.of(inputStream)
                     .size(Integer.parseInt(applicationProperties.getConfigValue(DEFAULT_THUMBNAIL_WIDTH_KEY)),
                             Integer.parseInt(applicationProperties.getConfigValue(DEFAULT_THUMBNAIL_HEIGHT_KEY)))
-                    .toOutputStream(baos);
+                    .toOutputStream(outputStream);
+            return new ByteArrayInputStream(outputStream.toByteArray());
         } catch (IOException ex) {
             log.error("Issue when reading input stream to get image thumbnail");
             throw new FileServiceException(FileServiceException.CONNECTION_ISSUE);
         }
-        return new ByteArrayInputStream(baos.toByteArray());
     }
 
     public HttpHeaders buildHttpHeader(String fileName) {
