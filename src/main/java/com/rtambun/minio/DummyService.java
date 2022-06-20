@@ -21,7 +21,7 @@ public class DummyService {
     @Autowired
     private MinioService minioService;
 
-    @MinioNotification({"s3:ObjectCreated:Post"})
+    @MinioNotification({"s3:ObjectCreated:Put"})
     public void handleUpload(NotificationInfo notificationInfo) {
         log.info(Arrays
             .stream(notificationInfo.records)

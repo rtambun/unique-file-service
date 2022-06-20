@@ -27,6 +27,34 @@ services:
       - "9001:9001"
 
   miniomc:
+    image: miniomc-create-bucket
     build: .
     depends_on:
       - minio
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 2
+
+  unique-file-service1:
+    image: rtambunio/unique-file-service
+    environment:
+      - "SPRING_PROFILES_ACTIVE=local"
+      - "SERVER_PORT=8081"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - miniomc
+      - elastic-search
+    deploy:
+      mode: replicated
+      replicas: 1
+
+#  unique-file-service2:
+#    image: rtambunio/unique-file-service
+#    environment:
+#      - "SPRING_PROFILES_ACTIVE=local"
+#      - "SERVER_PORT=8081"
+#    depends_on:
+#      - miniomc
+#      - elastic-search
