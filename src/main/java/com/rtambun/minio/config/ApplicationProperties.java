@@ -10,8 +10,11 @@ import org.springframework.stereotype.Component;
 @PropertySource("classpath:application.properties")
 public class ApplicationProperties {
 
-    @Autowired
     private Environment env;
+
+    public ApplicationProperties(Environment env) {
+        this.env = env;
+    }
 
     public String getConfigValue(String configKey){
         return env.getProperty(configKey);
