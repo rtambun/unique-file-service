@@ -48,7 +48,7 @@ services:
       - elastic-search
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 2
 
 #  unique-file-service2:
 #    image: rtambunio/unique-file-service
