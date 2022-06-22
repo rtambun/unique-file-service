@@ -1,5 +1,7 @@
 #ignored folder
 .idea/
+.gradle/
+build/
 target/
 
 # Compiled class file
