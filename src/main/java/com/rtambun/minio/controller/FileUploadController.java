@@ -33,7 +33,6 @@ public class FileUploadController {
     private final MinioService minioService;
     private final ImageService imageService;
     private final VideoService videoService;
-    private final UploadService uploadService;
     private final String url;
 
     private static final String SUCCESS = "success";
@@ -45,13 +44,11 @@ public class FileUploadController {
                                 MinioService minioService,
                                 ImageService imageService,
                                 VideoService videoService,
-                                UploadService uploadService,
                                 @Value("${minio.response.url}") String url) {
         this.fileService = fileService;
         this.minioService = minioService;
         this.imageService = imageService;
         this.videoService = videoService;
-        this.uploadService = uploadService;
         this.url = url;
     }
 
@@ -63,13 +60,17 @@ public class FileUploadController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Object> addAttachment(@NotNull @RequestPart("file") MultipartFile file) {
-        return uploadService.addAttachment(file,url,minioService);
+        return addFile(null, file);
     }
 
     @PostMapping(value = "/v2/{incidentId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Object> addAttachment(@PathVariable("incidentId") String incidentId,
                                                 @NotNull @RequestPart("file") MultipartFile file) {
+        return addFile(incidentId, file);
+    }
 
+    private ResponseEntity<Object> addFile(String incidentId,
+                                           MultipartFile file) {
         HashMap<String, String> responseObj = new HashMap<>();
         HttpStatus status;
 

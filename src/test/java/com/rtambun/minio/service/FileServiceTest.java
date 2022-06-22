@@ -36,7 +36,6 @@ class FileServiceTest {
     private FileMapRepository mockFileMapRepository;
     private MinioService mockMinioService;
     private UUIDProvider mockUuidProvider;
-    private String url;
     private FileService fileService;
     private MockMultipartFile mockMultipartFile;
 
@@ -45,7 +44,7 @@ class FileServiceTest {
         mockFileMapRepository = mock(FileMapRepository.class);
         mockMinioService = mock(MinioService.class);
         mockUuidProvider = mock(UUIDProvider.class);
-        url = "http://test/";
+        String url = "http://test/";
         fileService = new FileService(mockFileMapRepository, mockMinioService, mockUuidProvider, url);
 
         mockMultipartFile = mock(MockMultipartFile.class);
@@ -116,6 +115,39 @@ class FileServiceTest {
 
     public static Stream<Arguments> getData_addFile_FileMappingForGivenIncidentIdAndFileName_NotFound() {
         return Stream.of(Arguments.of(new FileMap()));
+    }
+
+    @Test
+    void addFile_IncidentIdNull_UploadFileOnly()
+            throws MinioException, FileServiceException {
+
+        UUID uuid = new UUID(0, 0);
+        String expectedMappedFileName = uuid + ".jpg";
+        when(mockUuidProvider.randomUUID()).thenReturn(uuid);
+
+        when(mockMultipartFile.getOriginalFilename()).thenReturn("fileName.jpg");
+        when(mockMultipartFile.getContentType()).thenReturn("image");
+
+        FileResponse actual = fileService.addFile(null, mockMultipartFile);
+
+        verify(mockFileMapRepository, times(0))
+                .findFileMapByIncidentIdAndFileName(any(), any());
+        verify(mockFileMapRepository, times(0))
+                .findFileMapByMappedFileName(any());
+
+        verify(mockFileMapRepository, times(0)).save(any());
+
+        ArgumentCaptor<Path> pathArgumentCaptor = ArgumentCaptor.forClass(Path.class);
+        verify(mockMinioService, times(1)).upload(
+                pathArgumentCaptor.capture(),
+                eq(null),
+                eq("image"),
+                any());
+
+        assertThat(pathArgumentCaptor.getValue().toString()).isEqualTo("fileName.jpg");
+
+        FileResponse expected = new FileResponse("fileName.jpg", null);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test

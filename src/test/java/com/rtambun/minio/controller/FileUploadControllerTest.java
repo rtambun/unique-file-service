@@ -37,9 +37,6 @@ class FileUploadControllerTest {
     private MinioService mockMinioService;
     private ImageService mockImageService;
     private VideoService mockVideoService;
-    private UploadService mockUploadService;
-    private String url;
-
     private FileUploadController fileUploadController;
     private MockMultipartFile mockMultipartFile;
 
@@ -49,19 +46,51 @@ class FileUploadControllerTest {
         mockMinioService = mock(MinioService.class);
         mockImageService = mock(ImageService.class);
         mockVideoService = mock(VideoService.class);
-        mockUploadService = mock(UploadService.class);
-        url = "http://test/";
+        String url = "http://test/";
         fileUploadController = new FileUploadController(mockFileService,
                 mockMinioService,
                 mockImageService,
                 mockVideoService,
-                mockUploadService,
                 url);
         mockMultipartFile = mock(MockMultipartFile.class);
     }
 
     @AfterEach
     void tearDown() {
+    }
+
+    @Test
+    public void addAttachmentWithoutIncidentId() throws FileServiceException {
+        FileResponse fileResponse = new FileResponse("fileName.jpg", null);
+        when(mockFileService.addFile(any(), any())).thenReturn(fileResponse);
+
+        ResponseEntity<Object> actual = fileUploadController.addAttachment(mockMultipartFile);
+
+        verify(mockFileService, times(1)).addFile(eq(null), any());
+
+        HashMap<String, String> successObj = new HashMap<>();
+        successObj.put("success", "true");
+        successObj.put("url", "http://test/fileName.jpg");
+        ResponseEntity<Object> expected = new ResponseEntity<>(successObj, HttpStatus.OK);
+        assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @MethodSource(value = "getData_addAttachmentWithIncidentId_AddFileThrowException")
+    public void addAttachmentWithoutIncidentId_AddFileThrowException(FileServiceException fileServiceException,
+                                                                  HttpStatus httpStatus)
+            throws FileServiceException {
+        FileResponse fileResponse = new FileResponse("fileName.jpg", null);
+        when(mockFileService.addFile(any(), any())).thenThrow(fileServiceException);
+
+        ResponseEntity<Object> actual = fileUploadController.addAttachment(mockMultipartFile);
+
+        verify(mockFileService, times(1)).addFile(eq(null), any());
+
+        HashMap<String, String> successObj = new HashMap<>();
+        successObj.put("success", "false");
+        ResponseEntity<Object> expected = new ResponseEntity<>(successObj, httpStatus);
+        assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
     }
 
     @Test

@@ -41,35 +41,45 @@ public class FileService {
         if (fileName == null || fileName.isEmpty() || fileName.isBlank()) {
             throw new FileServiceException(FileServiceException.FILE_NAME_NOT_PROVIDED);
         }
-
-        FileMap fileMap = fileMapRepository.findFileMapByIncidentIdAndFileName(incidentId, fileName);
         String mappedFileName;
 
-        String[] processStringForExtension =  fileName.split("\\.");
-        String ext = "";
-        if (processStringForExtension.length == 2) {
-            ext = processStringForExtension[1];
-        }
-
-        if (fileMap == null || fileMap.getId() == null) {
-            do {
-                UUID uuid = uuidProvider.randomUUID();
-                mappedFileName = uuid.toString();
-                mappedFileName += (ext.isEmpty() ? "" : "." + ext);
-                fileMap = fileMapRepository.findFileMapByMappedFileName(mappedFileName);
-            } while (!(fileMap == null || fileMap.getId() == null));
-
-            fileMap = new FileMap(null, incidentId, fileName, mappedFileName);
-            fileMapRepository.save(fileMap);
+        if (incidentId == null) {
+            mappedFileName = fileName;
         } else {
-            mappedFileName = fileMap.getMappedFileName();
+            FileMap fileMap = fileMapRepository.findFileMapByIncidentIdAndFileName(incidentId, fileName);
+
+            String[] processStringForExtension =  fileName.split("\\.");
+            String ext = "";
+            if (processStringForExtension.length == 2) {
+                ext = processStringForExtension[1];
+            }
+
+            if (fileMap == null || fileMap.getId() == null) {
+                do {
+                    UUID uuid = uuidProvider.randomUUID();
+                    mappedFileName = uuid.toString();
+                    mappedFileName += (ext.isEmpty() ? "" : "." + ext);
+                    fileMap = fileMapRepository.findFileMapByMappedFileName(mappedFileName);
+                } while (!(fileMap == null || fileMap.getId() == null));
+
+                fileMap = new FileMap(null, incidentId, fileName, mappedFileName);
+                fileMapRepository.save(fileMap);
+            } else {
+                mappedFileName = fileMap.getMappedFileName();
+            }
         }
 
+        return uploadFile(mappedFileName, fileName, multipartFile);
+    }
+
+    private FileResponse uploadFile(String fileName,
+                                   String returnFileName,
+                                   MultipartFile multipartFile) throws FileServiceException {
         try {
             HashMap<String, String> header = new HashMap<>();
-            Path path = of(mappedFileName).normalize();
+            Path path = of(fileName).normalize();
             minioService.upload(path, multipartFile.getInputStream(), multipartFile.getContentType(), header);
-            return new FileResponse(fileName, null);
+            return new FileResponse(returnFileName, null);
         } catch (MinioException | IOException e) {
             log.error(String.format("metadata for %s", e));
             throw new FileServiceException(FileServiceException.CONNECTION_ISSUE);
