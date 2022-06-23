@@ -1,5 +1,5 @@
 plugins {
-	id 'org.springframework.boot' version '2.2.0.RELEASE'
+	id 'org.springframework.boot' version '2.7.0'
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 	id 'java'
 }
@@ -9,6 +9,7 @@ version = '1.1'
 sourceCompatibility = '11'
 
 repositories {
+	mavenLocal()
 	mavenCentral()
 }
 
@@ -27,8 +28,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-configuration-processor'
 	implementation 'org.springframework.boot:spring-boot-devtools'
 	implementation 'org.springframework:spring-test'
-	implementation 'io.springfox:springfox-boot-starter:3.0.0'
-	implementation 'com.jlefebure:spring-boot-starter-minio:1.2'
+	implementation 'org.springdoc:springdoc-openapi-ui:1.6.9'
+	implementation 'com.jlefebure:spring-boot-starter-minio:1.11-SNAPSHOT'
 	implementation 'org.apache.commons:commons-text:1.6'
 	implementation 'io.jsonwebtoken:jjwt-api:0.10.5'
 	implementation 'io.jsonwebtoken:jjwt-impl:0.10.5'
