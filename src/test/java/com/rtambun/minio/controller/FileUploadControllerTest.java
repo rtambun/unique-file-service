@@ -4,7 +4,6 @@ import com.jlefebure.spring.boot.minio.MinioService;
 import com.rtambun.minio.service.FileService;
 import com.rtambun.minio.service.FileServiceException;
 import com.rtambun.minio.service.ImageService;
-import com.rtambun.minio.service.UploadService;
 import com.rtambun.minio.service.VideoService;
 import com.rtambun.minio.dto.FileResponse;
 import io.minio.messages.Item;

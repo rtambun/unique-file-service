@@ -3,7 +3,6 @@ package com.rtambun.minio.controller;
 import com.jlefebure.spring.boot.minio.MinioService;
 import com.rtambun.minio.service.IThumbnailService;
 import com.rtambun.minio.service.ImageService;
-import com.rtambun.minio.service.UploadService;
 import com.rtambun.minio.service.VideoService;
 import com.rtambun.minio.dto.FileResponse;
 import com.rtambun.minio.service.FileService;
