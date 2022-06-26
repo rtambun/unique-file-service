@@ -27,5 +27,6 @@ unique-file service separately. This can be used when you wanted to debug this s
 
 Docker-compose-local.yml is used to start unique-file-service and all its dependency. This can be used to do 
 demo of the service. In order for this yml file to work, image of unique service must be stored in local registry or 
-install on remote registry. To build the image use Dockerfile that is created on the root project folder.
+install on remote registry. To build the image use Dockerfile that is created on the root project folder. 
 
+Once service is running locally, swagger documentation can be found here, http://localhost:8086/swagger-ui/index.html.
