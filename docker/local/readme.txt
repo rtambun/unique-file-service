@@ -10,7 +10,7 @@ https://docs.min.io/docs/minio-bucket-notification-guide.html.
 
 TODO: To setup minio client image that will automatically set up minio server to configure the notification event
 Following are the command for reference not to go to minio documentation
-1. mc alist set {label} http://localhost:9000 minioadmin minioadmin
+1. mc alias set {label} http://localhost:9000 minioadmin minioadmin
 2. mc admin config get {label} notify_kafka
 3. mc admin config set minio notify_kafka topic=minio brokers=kafka:9092 sasl_username= sasl_password= sasl_mechanism=plain client_tls_cert= client_tls_key= tls_client_auth=0 sasl=off tls=off tls_skip_verify=off queue_limit=0 queue_dir= version=
 4. mc admin service restart minio
