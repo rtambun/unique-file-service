@@ -11,7 +11,6 @@ import org.springframework.http.*;
 
 import java.net.URISyntaxException;
 
-@IntegrationTest
 public class UploadFileWithoutIncidentId extends InitIntegrationTest{
 
     @Autowired

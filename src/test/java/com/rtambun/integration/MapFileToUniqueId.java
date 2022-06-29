@@ -10,7 +10,6 @@ import org.springframework.http.*;
 
 import java.net.URISyntaxException;
 
-@IntegrationTest
 public class MapFileToUniqueId extends InitIntegrationTest{
 
     @Autowired
