@@ -2,6 +2,7 @@ package com.rtambun.integration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.rtambun.integration.container.FileMapRepositoryContainer;
+import com.rtambun.integration.container.KafkaContainer;
 import com.rtambun.integration.container.MinioClientContainer;
 import com.rtambun.integration.container.MinioContainer;
 import com.rtambun.integration.util.TestUtil;
@@ -24,7 +25,8 @@ import java.net.URISyntaxException;
 @SpringBootTest(classes = SpringBootMinioApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ContextConfiguration(initializers = {
         FileMapRepositoryContainer.Initializer.class,
-        MinioContainer.Initializer.class
+        MinioContainer.Initializer.class,
+        KafkaContainer.Initializer.class
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @EnableAutoConfiguration
@@ -39,6 +41,7 @@ public class MapFileToUniqueId {
                 MinioContainer.MINIO_SECRET_KEY,
                 MinioContainer.getMinioContainerIpAddress());
         FileMapRepositoryContainer.startFileMapRepositoryContainer();
+        KafkaContainer.startKafkaCloseIncidentContainer();
     }
 
     @AfterAll
@@ -46,6 +49,7 @@ public class MapFileToUniqueId {
         MinioContainer.stopMinioContainer();
         MinioClientContainer.stopMinioClientContainer();
         FileMapRepositoryContainer.stopFileMapRepositoryContainer();
+        KafkaContainer.stopKafkaCloseIncidentContainer();
     }
 
     @Autowired

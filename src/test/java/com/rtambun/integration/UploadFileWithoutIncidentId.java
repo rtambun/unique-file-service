@@ -1,9 +1,8 @@
 package com.rtambun.integration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rtambun.integration.container.FileMapRepositoryContainer;
+import com.rtambun.integration.container.KafkaContainer;
 import com.rtambun.integration.container.MinioClientContainer;
 import com.rtambun.integration.container.MinioContainer;
 import com.rtambun.integration.util.TestUtil;
@@ -11,7 +10,6 @@ import com.rtambun.minio.SpringBootMinioApplication;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,23 +17,17 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.*;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = SpringBootMinioApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ContextConfiguration(initializers = {
         FileMapRepositoryContainer.Initializer.class,
-        MinioContainer.Initializer.class
+        MinioContainer.Initializer.class,
+        KafkaContainer.Initializer.class
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @EnableAutoConfiguration
@@ -50,6 +42,7 @@ public class UploadFileWithoutIncidentId {
                 MinioContainer.MINIO_SECRET_KEY,
                 MinioContainer.getMinioContainerIpAddress());
         FileMapRepositoryContainer.startFileMapRepositoryContainer();
+        KafkaContainer.startKafkaCloseIncidentContainer();
     }
 
     @AfterAll
@@ -57,6 +50,7 @@ public class UploadFileWithoutIncidentId {
         MinioContainer.stopMinioContainer();
         MinioClientContainer.stopMinioClientContainer();
         FileMapRepositoryContainer.stopFileMapRepositoryContainer();
+        KafkaContainer.stopKafkaCloseIncidentContainer();
     }
 
     @Autowired

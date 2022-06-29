@@ -1,6 +1,7 @@
 package com.rtambun.minio;
 
 import com.rtambun.integration.container.FileMapRepositoryContainer;
+import com.rtambun.integration.container.KafkaContainer;
 import com.rtambun.integration.container.MinioClientContainer;
 import com.rtambun.integration.container.MinioContainer;
 import lombok.extern.log4j.Log4j2;
@@ -18,7 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 @SpringBootTest(classes = SpringBootMinioApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ContextConfiguration(initializers = {
         FileMapRepositoryContainer.Initializer.class,
-        MinioContainer.Initializer.class
+        MinioContainer.Initializer.class,
+        KafkaContainer.Initializer.class
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @EnableAutoConfiguration
@@ -33,6 +35,7 @@ public class ServiceTest {
                 MinioContainer.MINIO_SECRET_KEY,
                 MinioContainer.getMinioContainerIpAddress());
         FileMapRepositoryContainer.startFileMapRepositoryContainer();
+        KafkaContainer.startKafkaCloseIncidentContainer();
     }
 
     @AfterAll
@@ -40,6 +43,7 @@ public class ServiceTest {
         MinioContainer.stopMinioContainer();
         MinioClientContainer.stopMinioClientContainer();
         FileMapRepositoryContainer.stopFileMapRepositoryContainer();
+        KafkaContainer.stopKafkaCloseIncidentContainer();
     }
     @Autowired
     private DummyService service = new DummyService();
