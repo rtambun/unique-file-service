@@ -14,12 +14,13 @@ public class KafkaContainer extends org.testcontainers.containers.KafkaContainer
     private static KafkaContainer kafkaContainer;
     private static String bootStrapServer;
 
-    public static void startKafkaCloseIncidentContainer() {
+    public static KafkaContainer startKafkaCloseIncidentContainer() {
         if (kafkaContainer == null) {
             kafkaContainer = new KafkaContainer();
             kafkaContainer.start();
             bootStrapServer = kafkaContainer.getBootstrapServers();
         }
+        return kafkaContainer;
     }
 
     public static void stopKafkaCloseIncidentContainer() {

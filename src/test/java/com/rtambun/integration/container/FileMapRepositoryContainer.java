@@ -6,6 +6,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+
 public class FileMapRepositoryContainer extends ElasticsearchContainer {
 
     //see https://docs.spring.io/spring-data/elasticsearch/docs/current/reference/html/ for reference of elastic search
@@ -19,11 +22,12 @@ public class FileMapRepositoryContainer extends ElasticsearchContainer {
 
     private static FileMapRepositoryContainer schedulerRepositoryContainer;
 
-    public static void startFileMapRepositoryContainer() {
+    public static FileMapRepositoryContainer startFileMapRepositoryContainer() {
         if (schedulerRepositoryContainer == null) {
             schedulerRepositoryContainer = new FileMapRepositoryContainer();
             schedulerRepositoryContainer.start();
         }
+        return schedulerRepositoryContainer;
     }
 
     public static void stopFileMapRepositoryContainer() {
@@ -34,6 +38,7 @@ public class FileMapRepositoryContainer extends ElasticsearchContainer {
     private FileMapRepositoryContainer() {
         super(DockerImageName.parse(ELASTICSEARCH_REGISTRY).withTag(ELASTICSEARCH_VERSION));
         withPassword(ELASTICSEARCH_PASSWORD);
+        withStartupTimeout(Duration.of(300, ChronoUnit.SECONDS));
     }
 
     public static class Initializer implements
