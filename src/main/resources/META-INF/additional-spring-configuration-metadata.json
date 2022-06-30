@@ -34,5 +34,30 @@
       "name": "elasticsearch.password",
       "type": "java.lang.String",
       "description": "Elasticsearch password."
+    },
+    {
+      "name": "kafka.client.id",
+      "type": "java.lang.String",
+      "description": "Client id used for this service."
+    },
+    {
+      "name": "kafka.bootstrap.server1",
+      "type": "java.lang.String",
+      "description": "Kafka server used for bootstrapping."
+    },
+    {
+      "name": "kafka.bootstrap.server2",
+      "type": "java.lang.String",
+      "description": "Second kafka server used for bootstrapping."
+    },
+    {
+      "name": "kafka.bootstrap.server3",
+      "type": "java.lang.String",
+      "description": "Third kafka server used for bootstrapping."
+    },
+    {
+      "name": "kafka.topic.minio.event",
+      "type": "java.lang.String",
+      "description": "Topic used by minio when sending notification to kafka."
     }
   ] }
